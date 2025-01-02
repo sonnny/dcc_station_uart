@@ -1,0 +1,91 @@
+
+notes on sniffing cs firmware with pulseview and dcc decoder
+each packet is separated by idle packet
+
+when a loco address is added by speed the firmware
+  send address/speed and function group 1 packet
+    and function group 2 packet
+
+sniffed data is after preamble and sync/start zero bit
+
+**********************************************
+speed and direction packets:
+  advance ops instruction 0x001X_XXXX
+  128 speed step control  0xXXX1_1111
+  combine advance ops and 128 speed step
+    0x0011_1111
+
+cs command +ls 3 8
+  set loco address 3 speed 8
+  0000_0011  0  0011_1111      0  0000_1000      0  checksum
+  address 3     128 speed step    reverse 7/126
+
+cs command +ld 3 ~
+  toggle direction on loco address 3
+  0000_0011  0  0011_1111      0  1000_1000   0  checksum
+  address 3     128 speed step    forward 7/126
+  when you toggle direction it retains the same speed
+    from the previous packet
+  the only difference from previous packet is setting
+  msb of byte 3 (after address and speed instruction)
+  to one
+
+*********************************  
+loco function packets:
+  function group on instruction = 100D_DDDD
+  when I sent function packet to a loco that
+    I have not send speed previously, the
+    station send a stop command to loco (zero speed)
+    
+    function group 1
+    100     0    4  3  2  1
+    prefix f0   f4 f3 f2 f1
+
+cs command +lf 5 1 t
+  fg1 = function group 1
+  set function 1 on loco address 5 to true
+  0000_0101  0  1000_0001    0   checksum
+  address 5     func 1 on
+
+cs command +lf 5 0 t
+  set function 0 on loco address 5 to true
+  0000_0101  0  1001_0001    0     checksum
+  address 5     func 1,0 on
+  
+cs command +lf 5 2 t
+  set function 2 on loco address 5 to true
+  0000_0101  0  1001_0011    0 checksum
+  address 5     func 1,0,2 on
+  
+cs command +lf 5 3 t
+  set function 3 on loco address 5 to true
+  0000_0101  0  1001_0111        0 checksum
+  address 5     func 1,0,2,3 on
+                
+cs command +lf 5 0 f
+  set function 0 on loco address 5 to false
+  0000_0101  0  1000_0111        0 checksum
+  address 5     func 1,2,3, on
+                func 0 off
+
+*********************************
+unable to decode accessory decoder
+accessory decoder
+
+cs command +af 1 1 t
+  set accessory address 1
+    paired output 1 to true
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+

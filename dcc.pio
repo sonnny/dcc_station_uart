@@ -1,0 +1,32 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; filename: dcc.pio
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+.program dcc
+
+.wrap_target
+loop1:
+  set pins, 1 [20]
+  out x,1
+  jmp !x do_zero
+  set pins, 0 [21]
+  jmp loop1
+do_zero:
+  nop [16]
+  set pins, 0 [30]
+  nop [8]
+.wrap
+
+% c-sdk {
+void dcc_program_init(PIO pio, uint sm, uint offset, uint pin) {
+   pio_gpio_init(pio, pin);
+   pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true);
+   pio_sm_config c = dcc_program_get_default_config(offset);
+   sm_config_set_set_pins(&c, pin, 1);
+   float div = clock_get_hz(clk_sys) / 400000.0;
+   sm_config_set_clkdiv(&c,div);
+   sm_config_set_out_shift(&c,
+                           false, // shift left
+                           true,  // autopull
+                           32);
+   pio_sm_init(pio, sm, offset, &c);}
+%}  
